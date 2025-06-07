@@ -4,6 +4,8 @@ import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FilePreview from './FilePreview';
 
+const emoji = '\u{1F60A}';
+
 export default function MediaUploader() {
   const [name, setName] = useState<string>('');
   const [files, setFiles] = useState<File[]>([]);
@@ -42,9 +44,9 @@ export default function MediaUploader() {
   );
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Formularz przesyłania
+    <Container maxWidth="sm" sx={{ mt: 3, mb: 20 }}>
+      <Typography variant="h4" sx={{ mb: 3, textAlign: 'center' }}>
+        Podziel się wspomnieniami {emoji}
       </Typography>
       <Box component="form" noValidate onSubmit={handleSubmit}>
         <Stack spacing={3}>
