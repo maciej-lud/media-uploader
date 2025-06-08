@@ -1,14 +1,19 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Container, Box, Stack, Button, TextField, Typography } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FilePreview from './FilePreview';
+import UploadDialog from './UploadDialog';
 
 const emoji = '\u{1F60A}';
 
-export default function MediaUploader() {
+const MediaUploader: React.FC = () => {
   const [name, setName] = useState<string>('');
   const [files, setFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleFilesChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,13 +40,38 @@ export default function MediaUploader() {
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!files.length) return;
+
+      setIsUploading(true);
+
       const formData = new FormData();
       formData.append('name', name.trim() || 'Anonim');
       files.forEach((file, idx) => formData.append(`files[${idx}]`, file));
       console.log('FormData prepared:', formData);
+
+      intervalRef.current = setInterval(() => {
+        setUploadProgress((prev) => {
+          const next = prev + 5;
+          if (next >= 100) {
+            clearInterval(intervalRef.current!);
+            setTimeout(() => {
+              setIsUploading(false);
+              setUploadProgress(0);
+              setFiles([]);
+              setName('');
+            }, 1000);
+          }
+          return Math.min(next, 100);
+        });
+      }, 200);
     },
     [name, files]
   );
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   return (
     <Container maxWidth="sm" sx={{ mt: 3, mb: 20 }}>
@@ -50,7 +80,16 @@ export default function MediaUploader() {
       </Typography>
       <Box component="form" noValidate onSubmit={handleSubmit}>
         <Stack spacing={3}>
-          <TextField label="Imię" value={name} variant="outlined" fullWidth onChange={(e) => setName(e.target.value)} />
+          <TextField
+            id="name"
+            name="name"
+            label="Imię (opcjonalnie)"
+            value={name}
+            size="small"
+            variant="outlined"
+            fullWidth
+            onChange={(e) => setName(e.target.value)}
+          />
           <Button component="label" variant="outlined" startIcon={<AddPhotoAlternateIcon />}>
             Wybierz pliki
             <input type="file" accept="image/*,video/*" multiple hidden onChange={handleFilesChange} />
@@ -82,6 +121,9 @@ export default function MediaUploader() {
           </Button>
         </Stack>
       </Box>
+      <UploadDialog open={isUploading} progress={uploadProgress} hasMultipleFiles={files.length > 1} />
     </Container>
   );
-}
+};
+
+export default MediaUploader;
