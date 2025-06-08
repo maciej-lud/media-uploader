@@ -1,10 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { Container, Box, Stack, Button, TextField, Typography } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import axios from 'axios';
 import FilePreview from './FilePreview';
 import UploadDialog from './UploadDialog';
 import UploadSuccessDialog from './UploadSuccessDialog';
+import ErrorDialog from './ErrorDialog';
 
 const emoji = '\u{1F60A}';
 
@@ -14,8 +16,7 @@ const MediaUploader: React.FC = () => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
 
   const handleFilesChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,40 +45,39 @@ const MediaUploader: React.FC = () => {
   };
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
       if (!files.length) return;
-
       setIsUploading(true);
-
+      setUploadProgress(0);
       const formData = new FormData();
       formData.append('name', name.trim() || 'Anonim');
-      files.forEach((file, idx) => formData.append(`files[${idx}]`, file));
-      console.log('FormData prepared:', formData);
-
-      intervalRef.current = setInterval(() => {
-        setUploadProgress((prev) => {
-          const next = prev + 5;
-          if (next >= 100) {
-            clearInterval(intervalRef.current!);
-            setTimeout(() => {
-              setIsUploading(false);
-              setIsSuccessDialogOpen(true);
-              setUploadProgress(0);
-            }, 1000);
-          }
-          return Math.min(next, 100);
+      files.forEach((file) => formData.append('files', file));
+      try {
+        await axios.post('http://localhost:3001/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            }
+          },
         });
-      }, 200);
+        setTimeout(() => {
+          setIsUploading(false);
+          setIsSuccessDialogOpen(true);
+          setUploadProgress(0);
+        }, 500);
+      } catch {
+        setIsUploading(false);
+        setUploadProgress(0);
+        setIsErrorDialogOpen(true);
+      }
     },
     [name, files]
   );
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
 
   return (
     <Container maxWidth="sm" sx={{ mt: 3, mb: 20 }}>
@@ -132,6 +132,11 @@ const MediaUploader: React.FC = () => {
         open={isSuccessDialogOpen}
         hasMultipleFiles={files.length > 1}
         onClose={handleCloseUploadSuccessDialog}
+      />
+      <ErrorDialog
+        open={isErrorDialogOpen}
+        hasMultipleFiles={files.length > 1}
+        onClose={() => setIsErrorDialogOpen(false)}
       />
     </Container>
   );
