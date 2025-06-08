@@ -4,6 +4,7 @@ import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FilePreview from './FilePreview';
 import UploadDialog from './UploadDialog';
+import UploadSuccessDialog from './UploadSuccessDialog';
 
 const emoji = '\u{1F60A}';
 
@@ -12,6 +13,7 @@ const MediaUploader: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -36,6 +38,11 @@ const MediaUploader: React.FC = () => {
     []
   );
 
+  const handleCloseUploadSuccessDialog = () => {
+    setIsSuccessDialogOpen(false);
+    setFiles([]);
+  };
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -55,9 +62,8 @@ const MediaUploader: React.FC = () => {
             clearInterval(intervalRef.current!);
             setTimeout(() => {
               setIsUploading(false);
+              setIsSuccessDialogOpen(true);
               setUploadProgress(0);
-              setFiles([]);
-              setName('');
             }, 1000);
           }
           return Math.min(next, 100);
@@ -122,6 +128,11 @@ const MediaUploader: React.FC = () => {
         </Stack>
       </Box>
       <UploadDialog open={isUploading} progress={uploadProgress} hasMultipleFiles={files.length > 1} />
+      <UploadSuccessDialog
+        open={isSuccessDialogOpen}
+        hasMultipleFiles={files.length > 1}
+        onClose={handleCloseUploadSuccessDialog}
+      />
     </Container>
   );
 };
