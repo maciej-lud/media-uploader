@@ -15,14 +15,18 @@ const MediaUploader: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
-  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState<boolean>(false);
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState<boolean>(false);
+  const [errorText, setErrorText] = useState<string>('');
 
   const handleFilesChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const filesList = e.target.files;
       if (!filesList) return;
-      const newFiles = Array.from(filesList).filter(
+      const mediaFiles = Array.from(filesList).filter(
+        (file) => file.type.startsWith('image/') || file.type.startsWith('video/')
+      );
+      const newFiles = mediaFiles.filter(
         (file) =>
           !files.find(
             (existingFile) => existingFile.name === file.name && existingFile.lastModified === file.lastModified
@@ -42,6 +46,11 @@ const MediaUploader: React.FC = () => {
   const handleCloseUploadSuccessDialog = () => {
     setIsSuccessDialogOpen(false);
     setFiles([]);
+  };
+
+  const handleCloseErrorDialog = () => {
+    setIsErrorDialogOpen(false);
+    setErrorText('');
   };
 
   const handleSubmit = useCallback(
@@ -71,12 +80,15 @@ const MediaUploader: React.FC = () => {
           setUploadProgress(0);
         }, 500);
       } catch (err) {
-        const message = axios.isAxiosError(err)
-          ? err.response?.data?.error || err.message
-          : err instanceof Error
-          ? err.message
-          : 'Nieznany błąd';
+        let message = 'Nieznany błąd';
+        if (axios.isAxiosError(err)) {
+          if (err.message === 'Network Error') message = 'Brak połączenia z serwerem. Spróbuj ponownie później.';
+          else message = err.response?.data?.error || err.message;
+        } else if (err instanceof Error) {
+          message = err.message;
+        }
         console.error('Upload error:', message);
+        setErrorText(message);
         setIsUploading(false);
         setUploadProgress(0);
         setIsErrorDialogOpen(true);
@@ -146,8 +158,9 @@ const MediaUploader: React.FC = () => {
       />
       <ErrorDialog
         open={isErrorDialogOpen}
+        text={errorText}
         hasMultipleFiles={files.length > 1}
-        onClose={() => setIsErrorDialogOpen(false)}
+        onClose={handleCloseErrorDialog}
       />
     </Container>
   );

@@ -33,7 +33,10 @@ async function createUniqueFolder(basePath, folderName) {
 app.post('/upload', upload.array('files'), async (req, res) => {
   try {
     const name = req.body.name;
-    const dataDir = path.join(__dirname, './data');
+    const dataDir = path.join(__dirname, '../data');
+    const isMedia = (mimetype) => mimetype.startsWith('image/') || mimetype.startsWith('video/');
+    const invalidFiles = req.files.filter((file) => !isMedia(file.mimetype));
+    if (invalidFiles.length > 0) return res.status(400).json({ error: 'Dozwolone są tylko zdjęcia i filmy.' });
     try {
       await fs.access(dataDir);
     } catch {
@@ -53,7 +56,7 @@ app.post('/upload', upload.array('files'), async (req, res) => {
   }
 });
 
-const distPath = path.join(__dirname, './dist');
+const distPath = path.join(__dirname, '../dist');
 app.use(express.static(distPath));
 
 app.get('*', (req, res) => {
