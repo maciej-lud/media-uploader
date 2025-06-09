@@ -21,11 +21,9 @@ async function createUniqueFolder(basePath, folderName) {
   while (true) {
     try {
       await fs.access(folderPath);
-      // Folder istnieje, stwórz nową nazwę z (1), (2), ...
       folderPath = path.join(basePath, `${folderName}(${counter})`);
       counter++;
     } catch {
-      // Folder nie istnieje, możemy go utworzyć
       await fs.mkdir(folderPath, { recursive: true });
       return folderPath;
     }
@@ -35,19 +33,13 @@ async function createUniqueFolder(basePath, folderName) {
 app.post('/upload', upload.array('files'), async (req, res) => {
   try {
     const name = req.body.name;
-    const dataDir = path.join(__dirname, 'data');
-
-    // Sprawdź czy katalog data istnieje, jeśli nie to stwórz
+    const dataDir = path.join(__dirname, './data');
     try {
       await fs.access(dataDir);
     } catch {
       await fs.mkdir(dataDir, { recursive: true });
     }
-
-    // Utwórz unikalny folder na podstawie imienia
     const folderPath = await createUniqueFolder(dataDir, name);
-
-    // Zapisz pliki
     const totalFiles = req.files.length;
     for (let i = 0; i < totalFiles; i++) {
       const file = req.files[i];
@@ -59,6 +51,13 @@ app.post('/upload', upload.array('files'), async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Coś poszło nie tak podczas przesyłania plików.' });
   }
+});
+
+const distPath = path.join(__dirname, './dist');
+app.use(express.static(distPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(PORT, () => {
