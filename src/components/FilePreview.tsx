@@ -49,7 +49,6 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, index, onRemove }) => {
           height: 24,
           borderRadius: '50%',
           boxShadow: 2,
-          p: 0,
           '&:hover': { bgcolor: 'error.dark' },
         }}
         onClick={() => onRemove(index)}

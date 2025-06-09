@@ -70,7 +70,13 @@ const MediaUploader: React.FC = () => {
           setIsSuccessDialogOpen(true);
           setUploadProgress(0);
         }, 500);
-      } catch {
+      } catch (err) {
+        const message = axios.isAxiosError(err)
+          ? err.response?.data?.error || err.message
+          : err instanceof Error
+          ? err.message
+          : 'Nieznany błąd';
+        console.error('Upload error:', message);
         setIsUploading(false);
         setUploadProgress(0);
         setIsErrorDialogOpen(true);
@@ -96,7 +102,7 @@ const MediaUploader: React.FC = () => {
             fullWidth
             onChange={(e) => setName(e.target.value)}
           />
-          <Button component="label" variant="outlined" startIcon={<AddPhotoAlternateIcon />}>
+          <Button component="label" variant="outlined" startIcon={<AddPhotoAlternateIcon />} disabled={isUploading}>
             Wybierz pliki
             <input type="file" accept="image/*,video/*" multiple hidden onChange={handleFilesChange} />
           </Button>
@@ -122,7 +128,12 @@ const MediaUploader: React.FC = () => {
               ))}
             </Box>
           )}
-          <Button type="submit" variant="contained" disabled={!files.length} startIcon={<CloudUploadIcon />}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={!files.length || isUploading}
+            startIcon={<CloudUploadIcon />}
+          >
             Wyślij
           </Button>
         </Stack>
