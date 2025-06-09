@@ -8,6 +8,8 @@ import UploadDialog from './UploadDialog';
 import UploadSuccessDialog from './UploadSuccessDialog';
 import ErrorDialog from './ErrorDialog';
 
+const API_URL = import.meta.env.DEV ? import.meta.env.VITE_API_URL_DEV : import.meta.env.VITE_API_URL;
+
 const emoji = '\u{1F60A}';
 
 const MediaUploader: React.FC = () => {
@@ -63,7 +65,7 @@ const MediaUploader: React.FC = () => {
       formData.append('name', name.trim() || 'Anonim');
       files.forEach((file) => formData.append('files', file));
       try {
-        await axios.post(`${import.meta.env.VITE_API_URL}/upload`, formData, {
+        await axios.post(`${API_URL}/upload`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },

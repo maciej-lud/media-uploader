@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
@@ -8,8 +9,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 3001;
+const uploadDir = path.resolve(__dirname, process.env.UPLOAD_DIR || './media');
 
 app.use(cors());
 
@@ -33,16 +37,16 @@ async function createUniqueFolder(basePath, folderName) {
 app.post('/upload', upload.array('files'), async (req, res) => {
   try {
     const name = req.body.name;
-    const dataDir = path.join(__dirname, '../data');
+    const mediaDir = uploadDir;
     const isMedia = (mimetype) => mimetype.startsWith('image/') || mimetype.startsWith('video/');
     const invalidFiles = req.files.filter((file) => !isMedia(file.mimetype));
     if (invalidFiles.length > 0) return res.status(400).json({ error: 'Dozwolone są tylko zdjęcia i filmy.' });
     try {
-      await fs.access(dataDir);
+      await fs.access(mediaDir);
     } catch {
-      await fs.mkdir(dataDir, { recursive: true });
+      await fs.mkdir(mediaDir, { recursive: true });
     }
-    const folderPath = await createUniqueFolder(dataDir, name);
+    const folderPath = await createUniqueFolder(mediaDir, name);
     const totalFiles = req.files.length;
     for (let i = 0; i < totalFiles; i++) {
       const file = req.files[i];
