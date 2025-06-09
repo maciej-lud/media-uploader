@@ -54,7 +54,7 @@ const MediaUploader: React.FC = () => {
       formData.append('name', name.trim() || 'Anonim');
       files.forEach((file) => formData.append('files', file));
       try {
-        await axios.post('http://localhost:3001/upload', formData, {
+        await axios.post(`${import.meta.env.VITE_API_URL}/upload`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
