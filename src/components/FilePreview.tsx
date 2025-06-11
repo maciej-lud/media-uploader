@@ -12,10 +12,53 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, index, onRemove }) => {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const objectUrl = URL.createObjectURL(file);
-    setUrl(objectUrl);
+    const originalUrl = URL.createObjectURL(file);
+    setUrl(originalUrl);
+
+    let lowQualityUrl: string;
+
+    const createLowQualityImage = async () => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const scale = 0.25;
+            const w = img.width * scale;
+            const h = img.height * scale;
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob(
+              (blob) => {
+                if (blob) resolve(URL.createObjectURL(blob));
+                else resolve(originalUrl);
+              },
+              'image/jpeg',
+              0.5
+            );
+          };
+          img.src = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+
+    if (file.type.startsWith('image/')) {
+      createLowQualityImage().then((compressedUrl) => {
+        lowQualityUrl = compressedUrl;
+        setUrl(compressedUrl);
+        URL.revokeObjectURL(originalUrl);
+      });
+    } else {
+      lowQualityUrl = originalUrl;
+    }
+
     return () => {
-      URL.revokeObjectURL(objectUrl);
+      if (lowQualityUrl) URL.revokeObjectURL(lowQualityUrl);
+      if (originalUrl && originalUrl !== lowQualityUrl) URL.revokeObjectURL(originalUrl);
       setUrl(null);
     };
   }, [file]);

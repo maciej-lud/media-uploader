@@ -100,12 +100,12 @@ const MediaUploader: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 3, mb: 20 }}>
+    <Container maxWidth="sm" sx={{ my: 4 }}>
       <Typography variant="h4" sx={{ mb: 3, textAlign: 'center' }}>
         Podziel się wspomnieniami {emoji}
       </Typography>
       <Box component="form" noValidate onSubmit={handleSubmit}>
-        <Stack spacing={3}>
+        <Stack spacing={2}>
           <TextField
             id="name"
             name="name"
@@ -120,36 +120,52 @@ const MediaUploader: React.FC = () => {
             Wybierz pliki
             <input type="file" accept="image/*,video/*" multiple hidden onChange={handleFilesChange} />
           </Button>
-          {files.length > 0 && (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                  sm: 'repeat(2, 1fr)',
-                  md: 'repeat(3, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
-              {files.map((file, index) => (
-                <FilePreview
-                  key={`${file.name}-${file.lastModified}`}
-                  file={file}
-                  index={index}
-                  onRemove={handleRemoveFile}
-                />
-              ))}
-            </Box>
-          )}
           <Button
             type="submit"
             variant="contained"
             disabled={!files.length || isUploading}
-            startIcon={<CloudUploadIcon />}
+            startIcon={
+              <CloudUploadIcon
+                sx={{
+                  '&.MuiSvgIcon-root': {
+                    fontSize: '2rem',
+                    marginRight: 1,
+                  },
+                }}
+              />
+            }
+            sx={{
+              fontSize: '1.5rem',
+              paddingY: 1,
+            }}
           >
             Wyślij
           </Button>
+          {files.length > 0 && (
+            <>
+              <Typography variant="h5">Wybrane pliki:</Typography>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: 'repeat(2, 1fr)',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)',
+                  },
+                  gap: 2,
+                }}
+              >
+                {files.map((file, index) => (
+                  <FilePreview
+                    key={`${file.name}-${file.lastModified}`}
+                    file={file}
+                    index={index}
+                    onRemove={handleRemoveFile}
+                  />
+                ))}
+              </Box>
+            </>
+          )}
         </Stack>
       </Box>
       <UploadDialog open={isUploading} progress={uploadProgress} hasMultipleFiles={files.length > 1} />
